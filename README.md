@@ -13,4 +13,4 @@ optional arguments:
   --logdir LOGDIR       The number of cores to use; default=4
   -d                    The flag '-d' will cause the program to decompress files matching the pattern
 
-e.g. gzip_parallel.py --pattern */*.xdf --num_cores 6 --logdir sub1_sess1_zip.log
+`e.g. gzip_parallel.py --pattern */*.xdf --num_cores 6 --logdir sub1_sess1_zip.log`
