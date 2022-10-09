@@ -20,15 +20,15 @@ class gzip_parallel(object):
         self.pattern = pattern
         self.do_decomp = decompress
         
-    def write_log_header(self) -> None:
-        with open(self.logfile, "w") as f:
-            f.write("------------------------\n")
-            now = datetime.now()
-            f.write(f"{now.strftime('%c')}\n")
-            f.write("------------------------\n")
-            f.write("Compression Results:\n")
-            f.write(f"{'unzipped':11}{'gzipped':11}{'comp%':7} filename\n")
-            
+    def log_header(self) -> str:
+        hdr = ("------------------------\n")
+        now = datetime.now()
+        hdr += f"{now.strftime('%c')}\n"
+        hdr += "------------------------\n"
+        hdr += "Compression Results:\n"
+        hdr += f"{'unzipped':11}{'gzipped':11}{'comp%':7} filename\n"
+        return(hdr)
+    
     def compress(self, x):
         x_full = self.abspath(x)
         cmd = f"gzip {x_full}"
@@ -66,16 +66,19 @@ class gzip_parallel(object):
             suffix = "bytes"
         return f"{np.round(size,1)} {suffix}"
 
-
+    def write_to_log(self,msg:str, mirror_to_screen:bool=True)-> None:
+        with open(self.logfile, "a") as f:
+            f.write(msg)
+        if mirror_to_screen is True:
+            print(msg.strip())
+        
     def log_progress(self, orig, zipped, fname):
         raw_size = self.human_size(orig)
         zip_size = self.human_size(zipped)
         change = 1 - (zipped / orig)
         change *= 100
         log_row = f"{raw_size:10} {zip_size:9}  {change:3.2f}%  {fname}\n"
-        with open(self.logfile, "a") as f:
-            f.write(log_row)
-        print(log_row.strip())
+        self.write_to_log(log_row)
 
 
     def abspath(self, fname, strip_ext=False):
@@ -97,7 +100,8 @@ class gzip_parallel(object):
 
     def run(self):
         start = time.time()
-        self.write_log_header()
+        hdr = self.log_header()
+        self.write_to_log(hdr)
         flist = glob.glob(self.pattern)
         if self.do_decomp is True:
             with Pool(self.num_cores) as p:
@@ -108,10 +112,7 @@ class gzip_parallel(object):
         
         end = time.time()
         summary = self.time_summary(start, end)
-        print(summary)
-        with open(self.logfile, "a") as f:
-            f.write(summary)
-
+        self.write_to_log(summary)
                 
 def main():
         parser = argparse.ArgumentParser(description="Gzip with multiple processes")
@@ -153,8 +154,5 @@ def main():
         gp.run()
 
 if __name__ == "__main__":
-    print("------------------------")
-    print("Compression Progress:")
-    print(f"{'unzipped':11}{'gzipped':11}{'comp%':7} filename")
 
     main()
